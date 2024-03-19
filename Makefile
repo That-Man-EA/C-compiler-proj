@@ -1,5 +1,5 @@
 CC=clang++
-CFLAGS=-std=c11 -g -fno-common
+CFLAGS=-std=c++11 -g -fno-common
 
 leocc: main.cpp
 	$(CC) -o leocc main.cpp $(LDFLAGS)
