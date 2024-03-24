@@ -254,14 +254,24 @@ Node* num() {
 }
 
 void codegen(Node* _expr) {
+    assert(_expr);
     if(_expr->kind == ND_ADD) {
-        
+        codegen(_expr->rhs);
+        cout << "  push %rax" << endl;
+        codegen(_expr->lhs);
+        cout << "  pop %rbx" << endl;
+        cout << "  add %rbx, %rax" << endl;
     }
     else if(_expr->kind == ND_SUB) {
-
+        codegen(_expr->rhs);
+        cout << "  push %rax" << endl;
+        codegen(_expr->lhs);
+        cout << "  pop %rbx" << endl;
+        cout << "  sub %rbx, %rax" << endl;
+        
     }
     else if(_expr->kind == ND_NUM) {
-
+        cout << "  mov $" << _expr->num << ", %rax" << endl;
     }
     else {
         assert(false && "unreachable");
@@ -283,8 +293,8 @@ int main(int argc, char* argv[]){
     }
 
         
-    cout << ".global _main" << endl;
-    cout << "_main:" << endl;
+    cout << ".global main" << endl;
+    cout << "main:" << endl;
 
 
     tokens_i = 0;
@@ -294,7 +304,7 @@ int main(int argc, char* argv[]){
     
     codegen(top_expr);
 
-    cout << "ret" << endl;
+    cout << "  ret" << endl;
     //4+2-6
     
     return 0;
