@@ -80,6 +80,9 @@ public:
 };
 
 vector<Token*> tokens;
+Token* current_tok;
+int tokens_i;
+
 
 void tokenize(char* p) {
     while(*p) {
@@ -107,6 +110,165 @@ void tokenize(char* p) {
     tokens.push_back(new Token(TK_EOF));
 }
 
+// Context Free Grammar (CFG)
+// a set of terminals
+// a set of non-terminals
+// a start symbol
+// rules for each nonterminal
+// expr := primary primary_opt
+// primary := "(" expr ")"
+//          |  num
+// primary_opt := "+" primary primary_opt
+            //  | "-" primary primary_opt
+            //  | epsilon
+// expr := primary ("+" primary | "-" primary)*
+// num is a terminal given by any set of digits
+// our start symbol is expr
+// expr =>
+// primary "+" primary ("+" primary | "-" primary)*
+
+// 5 + 10 - 5
+// (5 + 10) - 5
+    // +
+// 5     -
+//     10  5
+
+// mov w0, 5   // 
+// push        // [5, 10, 5]
+// mov w0, 10
+// push w0     // [5, 10]
+
+// pop w0      //  [5, 10]
+// pop w1      //  [5]
+// sub w0, w1, w0
+// push w0    //   [5, 5]
+// mov w0, #5
+// push w0      // [5]
+// pop w0     // [5]
+// pop w1      // []
+// add w0, w1, w0
+// ret
+//     -  
+//   +   5
+// 5   10
+// expr => 
+// primary "+" primary =>
+// num "+" primary 
+// num "+" num 
+
+// ND_NUM,
+// ND_PRIMARY,
+// ND_PRIMARY_OPT,
+// ND_ADD,
+// ND_SUB
+// 
+// show the path starting from expr to generate the program "115 - 30 + 110"
+// expr =>                                                                  ND_EXPR
+// primary primary_opt =>                                               ND_PRIM     ND_PRIM_OPT
+// 115 primary_opt =>                                                       115
+// 115 "-" primary primary_opt =>                                                    ND_PRIM        ND_PRIM_OPT
+// 115 "-" 30 primary_opt =>                                                            30          
+// 115 "-" 30 "+" primary primary_opt =>                                                        ND_PRIM  ND_PRIM_OPT
+// 115 "-" 30 "+" 110 primary_opt =>                                                              110    
+// 115 "-" 30 "+" 110 epsilon =>                                                                            epsilon
+// 115 "-" 30 "+" 110 
+//
+//
+//
+//
+//
+
+// primary := num
+// expr := primary ("+" primary | "-" primary)*
+// num := <any integer>
+
+// 42
+
+enum NodeKind {
+    ND_NUM,
+    ND_ADD,
+    ND_SUB
+};
+
+class Node {
+public:
+    NodeKind kind;
+
+    // fields for ND_NUM
+    int num;
+
+    //fields for ND_ADD or ND_SUB
+    Node *lhs, *rhs;
+
+    // ND_NUM ctor
+    Node(NodeKind kind, int n) : kind(kind), num(n) {}
+
+    // ND_ADD or ND_SUB ctor
+    Node(NodeKind kind, Node* l, Node* r) : kind(kind), lhs(l), rhs(r) {}
+};
+
+Node* expr();
+Node* primary();
+Node* num();
+
+// 4+2-6 |
+// expr := primary ("+" primary | "-" primary)*
+Node* expr() {
+    Node* _expr = primary();
+
+    while(current_tok->kind != TK_EOF) {
+        assert(current_tok->kind == TK_PUNCT);
+
+        if(current_tok->punct == "+") {
+            current_tok = tokens[++tokens_i];
+            Node* _prim = primary();
+
+            _expr = new Node(ND_ADD, _expr, _prim);
+        }
+        else if(current_tok->punct == "-") {
+            current_tok = tokens[++tokens_i];
+            Node* _prim = primary();
+
+            _expr = new Node(ND_SUB, _expr, _prim);
+        }
+        else {
+            assert(false && "unreachable");
+        }
+    }
+
+
+    assert(current_tok->kind == TK_EOF);
+    return _expr;
+}
+
+Node* primary() {
+    return num();
+}
+// <TK_NUM: "42">
+// num := <any integer>
+Node* num() {
+    assert(current_tok->kind == TK_NUM);
+    int n = current_tok->num;
+    current_tok = tokens[++tokens_i];
+    return new Node(ND_NUM, n);
+}
+
+void codegen(Node* _expr) {
+    if(_expr->kind == ND_ADD) {
+        
+    }
+    else if(_expr->kind == ND_SUB) {
+
+    }
+    else if(_expr->kind == ND_NUM) {
+
+    }
+    else {
+        assert(false && "unreachable");
+    }
+}
+
+
 // expected input: <some number>
 int main(int argc, char* argv[]){
     if(argc != 2) {
@@ -116,39 +278,24 @@ int main(int argc, char* argv[]){
 
     tokenize(argv[1]);
 
-    // for(int i = 0; i < tokens.size(); i++) {
-    //     tokens[i]->print();
-    // }
+    for(int i = 0; i < tokens.size(); i++) {
+        //tokens[i]->print();
+    }
 
         
     cout << ".global _main" << endl;
     cout << "_main:" << endl;
-    cout << "mov w0,#" << (*tokens.begin())->num << endl;
 
 
-    int i = 1;
-    Token* current = tokens[i];
+    tokens_i = 0;
+    current_tok = tokens[tokens_i];
+
+    Node* top_expr = expr();
     
-    while(current->kind != TK_EOF){
-        assert(current->kind == TK_PUNCT);
-
-        if(current->punct == "+") {
-            current = tokens[++i]; // move it past the +
-            cout << "add w0, w0, #" << current->num << endl;
-            current = tokens[++i]; // move it past the num, which will be either TK_EOF or another TK_PUNCT
-        }
-        else if(current->punct == "-") {
-            current = tokens[++i]; // move it past the +
-            cout << "sub w0, w0, #" << current->num << endl;
-            current = tokens[++i];
-        }
-        else {
-            assert(false && "unreachable");
-        }
-
-    }
+    codegen(top_expr);
 
     cout << "ret" << endl;
+    //4+2-6
     
     return 0;
 }

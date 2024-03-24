@@ -2,7 +2,7 @@ CC=clang++
 CFLAGS=-std=c++11 -g -fno-common
 
 leocc: main.cpp
-	$(CC) -o leocc main.cpp $(LDFLAGS)
+	$(CC) -o leocc main.cpp $(CFLAGS)
 
 test: leocc
 	./test.sh 
