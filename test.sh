@@ -28,5 +28,8 @@ assert 47 '41+6'
 assert 35 '5+20+10'
 assert 13 '20    -    7     ' 
 assert 100 '10+20+50-10-20+50'
+assert 10 '20/2'
+assert 40 '20*2'
+assert 25 '20+30-10+5-5*5+10/2'
 
 echo OK
