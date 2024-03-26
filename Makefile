@@ -2,7 +2,8 @@ CC=clang++
 CFLAGS=-std=c++11 -g -fno-common
 
 leocc: main.cpp
-	$(CC) -o leocc main.cpp $(CFLAGS)
+	$(CC) -c leocc.hpp tokenizer.cpp parser.cpp codegen.cpp main.cpp $(CFLAGS)
+	$(CC) *.o -o leocc
 
 test: leocc
 	./test.sh 
