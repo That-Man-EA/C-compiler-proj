@@ -22,14 +22,21 @@ assert() {
     fi
 }
 
-assert 1 1 
+assert 0 0 
 assert 42 42 
-assert 47 '41+6'
-assert 35 '5+20+10'
-assert 13 '20    -    7     ' 
-assert 100 '10+20+50-10-20+50'
-assert 10 '20/2'
-assert 40 '20*2'
-assert 25 '20+30-10+5-5*5+10/2'
+assert 25 '5+20'
+assert 15 '5+20-10'
+assert 25 '5 + 20'
+assert 25 '5+ 20'
+assert 25 '5 +20'
+assert 10 '5 * 2'
+assert 11 '1 + 5 * 2'
+assert 0 '5 / 10'
+assert 2 '10 / 5'
+assert 8 '1 + 10 / 5 * 3 + 1'
+assert 2 '1 + 10 / 5 * 3 + 1 - 2 * 3'
+assert 2 '1 + 10 / 5 * 3 * 1 + 1 - 2 * 3'
+assert 15 '5*(9-6)'
+assert 4 '(3+5)/2'
 
 echo OK

@@ -60,18 +60,16 @@ int tokens_i;
 void tokenize(char* p) {
     while(*p) {
         if(isspace(*p)) {
-            p++;// do nothing 
+            p++; 
         }
         else if(isdigit(*p)) {
             char* q = p;
             long val = strtol(p, &p, 10);
             tokens.push_back(new Token(TK_NUM, val));
         }
-        else if((*p == '+') || (*p == '-') || (*p == '*') || (*p == '/')){
-            // cout << "*p is " << *p << endl;
+        else if((*p == '+') || (*p == '-') || (*p == '*') || (*p == '/') || (*p == '(') || (*p == ')')){
             string s = "";
             s.push_back(*p);
-            // cout << "s is " << s << endl;
             tokens.push_back(new Token(TK_PUNCT, s));
             p++;
         }
@@ -138,7 +136,6 @@ void print_expr_r(Node* _expr, int depth) {
     
     if(_expr->kind == ND_NUM){
         cout << _expr->num << endl;
-        
     }      
     else if(_expr->kind == ND_ADD){
         cout << "+" << endl;
@@ -160,75 +157,15 @@ void print_expr_r(Node* _expr, int depth) {
         print_expr_r(_expr->lhs, depth + 1);
         print_expr_r(_expr->rhs, depth + 1);
     }
-    
-
-    else if(_expr->kind == ND_MUL) {
-        
+    else {
+        assert(false && "unreachable");//should never happen if code works correctly
     }
-/*
-tree: 1
-output:
-1 
-
-tree: +
-    1   2
-ND_PLUS
-|--1
-|--2
-
-tree: 
-         +
-      +     3
-    1   2
-|--ND_PLUS
-|==|--ND_PLUS
-  |--ND_PLUS
-   |--1
-   |--2
- |--3
-*/
-
 
 }
 
 void print_expr(Node* _expr) {
     print_expr_r(_expr, 0);
 }
-// |
-// 2 * 3 + 4
-//  ND_NUM: 2
-// 4 + 2 * 3
-// expr := primary ("+" primary | "-" primary | "*" primary | "/" primary)*
-
-/*
-leo@leovm:~/desktop/C-compiler-proj$ ./leocc --show-ast "2*3+4"
-// |-- +
-//   |-- *
-//     |-- 2
-//     |-- 3
-//   |-- 4
-// -> 
-// |-- +
-//   |-- 6
-//   |-- 4
-// -> 
-// |-- 10
-leo@leovm:~/desktop/C-compiler-proj$ ./leocc --show-ast "4+2*3"
-// |-- *
-//   |-- +
-//     |-- 4
-//     |-- 2
-//   |-- 3
-// -> 
-// |-- *
-//   |-- 6
-//   |-- 3
-// -> 
-// |-- 18
-*/
-// expr = mul ("+" mul | "-" mul)*
-// expr = primary ("+" primary | "-" primary)*
-
 
 Node* expr() {
     Node* _expr = mul();
@@ -251,12 +188,9 @@ Node* expr() {
         }
     }
 
-
-    assert(current_tok->kind == TK_EOF);
     return _expr;
 }
 
-//mul = primary ("*" primary | "/" primary)*
 Node* mul(){
     Node* _expr = primary();
 
@@ -284,10 +218,16 @@ Node* mul(){
 }
 
 Node* primary() {
+    if((current_tok->kind == TK_PUNCT) && (current_tok->punct == "(")){
+        current_tok = tokens[++tokens_i];
+        Node* _expr = expr();
+        assert((current_tok->kind == TK_PUNCT) && (current_tok->punct == ")"));
+        current_tok = tokens[++tokens_i];
+        return _expr;
+    }
+
     return num();
 }
-// <TK_NUM: "42">
-// num := <any integer>
 Node* num() {
     assert(current_tok->kind == TK_NUM);
     int n = current_tok->num;
@@ -310,7 +250,6 @@ void codegen(Node* _expr) {
         codegen(_expr->lhs);
         cout << "  pop %rbx" << endl;
         cout << "  sub %rbx, %rax" << endl;
-        
     }
     else if(_expr->kind == ND_NUM) {
         cout << "  mov $" << _expr->num << ", %rax" << endl;
@@ -321,7 +260,6 @@ void codegen(Node* _expr) {
         codegen(_expr->lhs);
         cout << "  pop %rbx" << endl;
         cout << "  imul %rbx, %rax" << endl;
-        
     }
     else if(_expr->kind == ND_DIV) {
         codegen(_expr->rhs);
@@ -330,7 +268,6 @@ void codegen(Node* _expr) {
         cout << "  pop %rbx" << endl;
         cout << "  mov $0, %rdx" << endl;
         cout << "  div %rbx" << endl;
-        
     }
     else {
         assert(false && "unreachable");
@@ -363,9 +300,6 @@ int main(int argc, char* argv[]){
         //tokens[i]->print();
     }
   
-    
-
-
     tokens_i = 0;
     current_tok = tokens[tokens_i];
 
@@ -376,13 +310,11 @@ int main(int argc, char* argv[]){
         exit(1);
     }
     
-    
     cout << ".global main" << endl;
     cout << "main:" << endl;
     codegen(top_expr);
 
     cout << "  ret" << endl;
-    //4+2-6
     
     return 0;
 }
