@@ -60,7 +60,7 @@ public:
     // ND_NUM ctor
     Node(NodeKind kind, int n) : kind(kind), num(n) {}
 
-    // ND_ADD or ND_SUB ctor
+    // ND_ADD or ND_SUB  or ND_MUL or ND_DIV ctor
     Node(NodeKind kind, Node* l, Node* r) : kind(kind), lhs(l), rhs(r) {}
 };
 

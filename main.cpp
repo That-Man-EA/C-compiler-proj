@@ -10,8 +10,6 @@
 using namespace std;
 
 
-
-
 // expected usage: leocc [--show-ast] <program>
 int main(int argc, char* argv[]){
     char* input;

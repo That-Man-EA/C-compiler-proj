@@ -2,15 +2,17 @@
 #include <cassert>
 
 /* 
+/* 
 Current CFG, with regex:
 expr = mul ("+" mul | "-" mul)*
-mul = primary ("*" primary | "/" primary)*
-primary = "(" expr ")" 
-        | num
+mul = unary ("*" unary | "/" unary)*
+unary = ("+" | "-") unary | primary
+primary = "(" expr ")" | num
 num = <number>
 */
 static Node* expr();
 static Node* mul();
+static Node* unary();
 static Node* primary();
 static Node* num();
 
@@ -101,20 +103,20 @@ Node* expr() {
 }
 
 Node* mul(){
-    Node* _expr = primary();
+    Node* _expr = unary();
 
     while((current_tok->punct == "*") || (current_tok->punct == "/") ) {
         assert(current_tok->kind == TK_PUNCT);
 
         if(current_tok->punct == "*") {
             current_tok = tokens[++tokens_i];
-            Node* _prim = primary();
+            Node* _prim = unary();
 
             _expr = new Node(ND_MUL, _expr, _prim);
         }
         else if(current_tok->punct == "/") {
             current_tok = tokens[++tokens_i];
-            Node* _prim = primary();
+            Node* _prim = unary();
 
             _expr = new Node(ND_DIV, _expr, _prim);
         }
@@ -142,4 +144,38 @@ Node* num() {
     int n = current_tok->num;
     current_tok = tokens[++tokens_i];
     return new Node(ND_NUM, n);
+}
+
+/* 
+Current CFG, with regex:
+expr = mul ("+" mul | "-" mul)*
+mul = unary ("*" unary | "/" unary)*
+unary = ("+" | "-") unary | primary
+primary = "(" expr ")" | num
+num = <number>
+*/
+
+Node* unary() {
+    if(current_tok->kind == TK_PUNCT && (current_tok->punct == "+" || current_tok->punct == "-")) {
+        // unary + does nothing. just return unary
+        if(current_tok->punct == "+"){
+            current_tok = tokens[++tokens_i];
+            return unary();
+        }
+        //Unary minus multiplies expression by (-1)
+        else if(current_tok->punct == "-"){
+            current_tok = tokens[++tokens_i];
+            return new Node(ND_MUL,
+                            new Node(ND_NUM, -1),
+                            unary());
+        }
+        else{
+            assert(false && "unreachable");
+        }
+    }
+    else {
+        //this is the 2nd rule
+        return primary();
+    }
+    
 }
