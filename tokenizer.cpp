@@ -39,6 +39,22 @@ void tokenize(char* p) {
             tokens.push_back(new Token(TK_PUNCT, s));
             p++;
         }
+        else if((*p == '=') || (*p == '<') || (*p == '>') || (*p == '!')){
+            string s = "";
+            //This covers the single char relational expressions
+            if(!(*(p+1) == '=')){
+                s.push_back(*p);
+                tokens.push_back(new Token(TK_PUNCT, s));
+                p++;
+            }
+            else{
+                s.push_back(*p);
+                s.push_back(*(p+1));
+                tokens.push_back(new Token(TK_PUNCT,s));
+                p++;
+                p++;
+            }
+        }
         else {
             assert(false && "shouldn't reach here");
         }

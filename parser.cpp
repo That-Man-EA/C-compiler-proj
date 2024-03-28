@@ -1,20 +1,14 @@
 #include "leocc.hpp"
 #include <cassert>
 
-/* 
-/* 
-Current CFG, with regex:
-expr = mul ("+" mul | "-" mul)*
-mul = unary ("*" unary | "/" unary)*
-unary = ("+" | "-") unary | primary
-primary = "(" expr ")" | num
-num = <number>
-*/
 static Node* expr();
 static Node* mul();
 static Node* unary();
 static Node* primary();
 static Node* num();
+static Node* add();
+static Node* equality();
+static Node* relational();
 
 static void print_expr_r(Node* _expr, int depth) {
     static const string begin_node = "|-- ";
@@ -52,6 +46,36 @@ static void print_expr_r(Node* _expr, int depth) {
         print_expr_r(_expr->lhs, depth + 1);
         print_expr_r(_expr->rhs, depth + 1);
     }
+    else if(_expr->kind == ND_LT){
+        cout << "<" << endl;
+        print_expr_r(_expr->lhs, depth + 1);
+        print_expr_r(_expr->rhs, depth + 1);
+    }
+    else if(_expr->kind == ND_LTE){
+        cout << "<=" << endl;
+        print_expr_r(_expr->lhs, depth + 1);
+        print_expr_r(_expr->rhs, depth + 1);
+    }
+    else if(_expr->kind == ND_GT){
+        cout << ">" << endl;
+        print_expr_r(_expr->lhs, depth + 1);
+        print_expr_r(_expr->rhs, depth + 1);
+    }
+    else if(_expr->kind == ND_GTE){
+        cout << ">=" << endl;
+        print_expr_r(_expr->lhs, depth + 1);
+        print_expr_r(_expr->rhs, depth + 1);
+    }
+    else if(_expr->kind == ND_EQ){
+        cout << "==" << endl;
+        print_expr_r(_expr->lhs, depth + 1);
+        print_expr_r(_expr->rhs, depth + 1);
+    }
+    else if(_expr->kind == ND_NEQ){
+        cout << "!=" << endl;
+        print_expr_r(_expr->lhs, depth + 1);
+        print_expr_r(_expr->rhs, depth + 1);
+    }
     else {
         assert(false && "unreachable");//should never happen if code works correctly
     }
@@ -78,8 +102,77 @@ Node* parse() {
     return _expr;
 }
 
-Node* expr() {
-    Node* _expr = mul();
+
+/* 
+Current CFG, with regex:
+expr = equality
+equality = relational ("==" relational | "!=" relational)*
+relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+add = mul ("+" mul | "-" mul)*
+mul = unary ("*" unary | "/" unary)*
+unary = ("+" | "-") unary | primary
+primary = "(" expr ")" | num
+*/
+Node* expr(){
+    return equality();
+}
+
+static bool is_equality_token(string punct) {
+    return (punct == "==") || (current_tok->punct == "!=");
+}
+// equality = relational ("==" relational | "!=" relational)*
+Node* equality(){
+    Node* _expr = relational();
+    while((current_tok->kind == TK_PUNCT) && is_equality_token(current_tok->punct)){
+        if(current_tok->punct == "=="){
+            current_tok = tokens[++tokens_i];
+            _expr = new Node(ND_EQ,_expr,relational());
+        }
+        else if(current_tok->punct == "!="){
+            current_tok = tokens[++tokens_i];
+            _expr = new Node(ND_NEQ,_expr,relational());
+        }
+        else{
+            assert(false && "unreachable");
+        }
+
+    }
+    return _expr;
+}
+
+static bool is_relational_token(string punct) {
+    return ((punct == "<") || (punct == "<=")|| (punct == ">")|| (punct == ">=")); 
+}
+Node* relational(){
+    Node* _expr = add();
+    while((current_tok->kind == TK_PUNCT) && is_relational_token(current_tok->punct)){
+        if(current_tok->punct == "<="){
+            current_tok = tokens[++tokens_i];
+            _expr = new Node(ND_LTE, _expr, add());
+        }
+        else if(current_tok->punct == "<"){
+            current_tok = tokens[++tokens_i];
+            _expr = new Node(ND_LT, _expr, add());
+        }
+        else if(current_tok->punct == ">="){
+            current_tok = tokens[++tokens_i];
+            _expr = new Node(ND_GTE, _expr, add());
+        }
+        else if(current_tok->punct == ">"){
+            current_tok = tokens[++tokens_i];
+            _expr = new Node(ND_GT, _expr, add());
+        }
+        else{
+            assert(false && "unreachable");
+        }
+    }
+
+
+    return _expr;
+}
+
+Node* add() {
+    Node* _expr = mul();//
 
     while((current_tok->punct == "+") || (current_tok->punct == "-" )) {
         if(current_tok->punct == "+") {
@@ -145,15 +238,6 @@ Node* num() {
     current_tok = tokens[++tokens_i];
     return new Node(ND_NUM, n);
 }
-
-/* 
-Current CFG, with regex:
-expr = mul ("+" mul | "-" mul)*
-mul = unary ("*" unary | "/" unary)*
-unary = ("+" | "-") unary | primary
-primary = "(" expr ")" | num
-num = <number>
-*/
 
 Node* unary() {
     if(current_tok->kind == TK_PUNCT && (current_tok->punct == "+" || current_tok->punct == "-")) {

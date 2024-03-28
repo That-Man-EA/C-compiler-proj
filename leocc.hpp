@@ -40,11 +40,19 @@ void tokenize(char* p);
 
 // Begin parser declarations
 enum NodeKind {
-    ND_NUM,
+    ND_NUM = 0,
+    ND_BINOP_BEGIN,
     ND_ADD,
     ND_SUB,
     ND_MUL,
-    ND_DIV
+    ND_DIV,
+    ND_LTE,
+    ND_LT,
+    ND_GTE,
+    ND_GT,
+    ND_EQ,
+    ND_NEQ,
+    ND_BINOP_END,
 };
 
 class Node {
