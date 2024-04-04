@@ -53,12 +53,18 @@ enum NodeKind {
     ND_EQ,
     ND_NEQ,
     ND_BINOP_END,
+    ND_PROGRAM,
+    ND_EXPR_STMT
 };
 
 class Node {
 public:
     NodeKind kind;
-
+    
+    // fields for ND_PROGRAM
+    vector<Node*> stmtList;
+    //fields for ND_EXPR_STMT
+    Node*  _expr;
     // fields for ND_NUM
     int num;
 
@@ -70,11 +76,15 @@ public:
 
     // ND_ADD or ND_SUB  or ND_MUL or ND_DIV ctor
     Node(NodeKind kind, Node* l, Node* r) : kind(kind), lhs(l), rhs(r) {}
+    //ND_PROGRAM
+    Node(NodeKind kind, vector<Node*> stmtList) : kind(kind), stmtList(stmtList) {}
+    //ND_EXPR_STMT
+    Node(NodeKind kind, Node* _expr) : kind(kind), _expr(_expr) {}
 };
 
 Node* parse();
 
-void print_expr(Node* _expr);
+void print_program(Node* _expr);
 extern bool ast_debug;
 
 // Begin codegen declarations

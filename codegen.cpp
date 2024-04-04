@@ -2,12 +2,18 @@
 #include <cassert>
 
 static void codegen_expr(Node* _expr);
+static void codegen_stmt(Node* _stmt);
+void codegen_stmt(Node* _stmt){
+    codegen_expr(_stmt->_expr);
+}
 
-void codegen(Node* _expr) {
+void codegen(Node* _program) {
     cout << ".global main" << endl;
     cout << "main:" << endl;
 
-    codegen_expr(_expr);
+    for(Node* _stmt : _program->stmtList){
+        codegen_stmt(_stmt);
+    }
 
     cout << "  ret" << endl;
     

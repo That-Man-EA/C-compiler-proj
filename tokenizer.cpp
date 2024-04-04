@@ -33,7 +33,7 @@ void tokenize(char* p) {
             long val = strtol(p, &p, 10);
             tokens.push_back(new Token(TK_NUM, val));
         }
-        else if((*p == '+') || (*p == '-') || (*p == '*') || (*p == '/') || (*p == '(') || (*p == ')')){
+        else if((*p == '+') || (*p == '-') || (*p == '*') || (*p == '/') || (*p == '(') || (*p == ')') || (*p == ';')){
             string s = "";
             s.push_back(*p);
             tokens.push_back(new Token(TK_PUNCT, s));

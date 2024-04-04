@@ -9,11 +9,15 @@ static Node* num();
 static Node* add();
 static Node* equality();
 static Node* relational();
+static Node* expr_stmt();
+static Node* stmt();
+static Node* program();
+
+static const string begin_node = "|-- ";
+static const string comment = "// ";
+const static int width_per_depth = 2;
 
 static void print_expr_r(Node* _expr, int depth) {
-    static const string begin_node = "|-- ";
-    static const string comment = "// ";
-    const static int width_per_depth = 2;
     cout << comment;
     
     
@@ -83,28 +87,53 @@ static void print_expr_r(Node* _expr, int depth) {
 }
 
 bool ast_debug = false;
+void print_expr(Node* _expr, int depth); 
 
-void print_expr(Node* _expr) {
-    print_expr_r(_expr, 0);
+void print_expr_stmt(Node* _expr_stmt, int depth){
+    cout << comment;
+    for(int i = 0; i < depth * width_per_depth; i++){
+        cout << " ";
+    }
+    cout << begin_node << "EXPR_STMT" << endl;
+    print_expr(_expr_stmt->_expr, depth+1);
+}
+
+void print_stmt(Node* _stmt, int depth){
+    print_expr_stmt(_stmt, depth);
+}
+
+void print_program(Node* _program){
+    assert(_program->kind == ND_PROGRAM);
+    cout << comment << begin_node << "PROGRAM" << endl;
+    for(Node* stmt : _program->stmtList) {
+        print_stmt(stmt, 1);
+    }
+}
+
+void print_expr(Node* _expr, int depth) {
+    print_expr_r(_expr, depth);
 }
 
 Node* parse() {
     tokens_i = 0;
     current_tok = tokens[tokens_i];
     
-    Node* _expr = expr();
+    Node* _program = program();
 
     if(ast_debug) {
-        print_expr(_expr);
+        print_program(_program);
         exit(1);
     }
     
-    return _expr;
+    return _program;
 }
 
 
 /* 
 Current CFG, with regex:
+program = stmt*
+stmt = expr-stmt
+expr-stmt = expr ";"
 expr = equality
 equality = relational ("==" relational | "!=" relational)*
 relational = add ("<" add | "<=" add | ">" add | ">=" add)*
@@ -113,6 +142,31 @@ mul = unary ("*" unary | "/" unary)*
 unary = ("+" | "-") unary | primary
 primary = "(" expr ")" | num
 */
+Node* program(){
+    vector<Node*> stmtList;
+
+    while(current_tok->kind != TK_EOF){
+        Node* _stmt = stmt();
+        stmtList.push_back(_stmt);
+    }
+    assert(current_tok->kind == TK_EOF);
+    return new Node(ND_PROGRAM,stmtList);   
+}
+
+Node* stmt(){
+    return expr_stmt();
+}
+
+Node* expr_stmt(){
+    Node* _expr = expr();
+    assert((current_tok->kind == TK_PUNCT) && (current_tok->punct == ";"));
+    
+    // advance the token pointer, just throw away/dont do anything with the ";"
+    current_tok = tokens[++tokens_i];
+
+    return new Node(ND_EXPR_STMT, _expr);
+}
+
 Node* expr(){
     return equality();
 }

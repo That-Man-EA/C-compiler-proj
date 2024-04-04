@@ -29,8 +29,8 @@ int main(int argc, char* argv[]){
     }
 
     tokenize(input);
-    Node* top_expr = parse();
-    codegen(top_expr);
+    Node* _program = parse();
+    codegen(_program);
 
     return 0;
 }
